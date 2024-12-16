@@ -1,551 +1,1746 @@
-<!DOCTYPE html>
-<html lang="en">
+<html><head>
+    <title>竞价强票（A模型） -- 仅作研究之用，买卖盈亏自负！</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net.cn/npm/uikit@3.21.13/dist/css/uikit.min.css">
+    <script src="https://cdn.jsdelivr.net.cn/npm/uikit@3.21.13/dist/js/uikit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net.cn/npm/uikit@3.21.13/dist/js/uikit-icons.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<!--    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts/dist/echarts.min.js"></script>-->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            min-width: 1000px;
+            margin: 0;
+            padding: 0;
+        }
 
-<!-- Head tag -->
-<head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="">
-    <meta name="keyword" content="">
-    <meta name="theme-color" content="#600090">
-    <meta name="msapplication-navbutton-color" content="#600090">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="#600090">
-    <link rel="shortcut icon" href="https://cdn4.iconfinder.com/data/icons/ionicons/512/icon-person-128.png">
-    <link rel="alternate" type="application/atom+xml" title="DevH" href="/atom.xml">
-    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/animate.css/3.5.2/animate.min.css">
-    <link rel="stylesheet" href="//cdn.bootcss.com/font-awesome/4.6.3/css/font-awesome.css">
-    <title>
+        /* 涨跌色值 */
+        .up-value {
+            color: #f44336;  /* 红色 */
+        }
+
+        .down-value {
+            color: #4caf50;  /* 绿色 */
+        }
+
+        /* 固定在顶部的标签页 */
+        .fixed-tab {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            z-index: 100;
+            border-bottom: 1px solid #e5e5e5;
+            padding: 10px 0;
+        }
+
+        /* 为固定标签页留出空间 */
+        .content-container {
+            margin-top: 60px;
+        }
+
+        /* 日历容器样式 */
+        .calendar-container {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        /* 响应式布局样式 */
+        .stock-table {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         
-        DevH&#39;s blog
+        .stock-code {
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            margin: 2px;
+            padding: 2px 8px;
+            background: #f8f8f8;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
         
-    </title>
+        .copy-btn {
+            border: none;
+            background: none;
+            padding: 0 4px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        .copy-btn:hover {
+            color: #1e87f0;
+        }
+        
+        /* 移动端优化 */
+        @media (max-width: 640px) {
+            .uk-card-body {
+                padding: 10px;
+            }
+            
+            .uk-table {
+                font-size: 0.85em;
+            }
+            
+            .uk-card-title {
+                font-size: 1.1em;
+            }
+            
+            .stock-code {
+                font-size: 0.8em;
+                padding: 1px 6px;
+            }
+            
+            /* 在移动端隐藏某些列 */
+            .mobile-hide {
+                display: none;
+            }
+        }
+        
+        /* 平板端优化 */
+        @media (min-width: 641px) and (max-width: 960px) {
+            .uk-card-body {
+                padding: 15px;
+            }
+            
+            .uk-table {
+                font-size: 0.9em;
+            }
+        }
+        
+        /* 涨跌颜色 */
+        .up-value {
+            color: #f0506e;
+        }
+        
+        .down-value {
+            color: #32d296;
+        }
+        
+        .positive-change {
+            color: #ff3636 !important;  /* 红色 */
+        }
+        .negative-change {
+            color: #00b300 !important;  /* 绿色 */
+        }
+        .uk-table-striped tbody tr:nth-of-type(odd) {
+            background-color: #f8f8f8;
+        }
+        
+        .uk-card-body {
+            padding: 4px;
+        }
+        
+        /* 历史数据布局样式 */
+        #history-data {
+            width: 95%;  /* 增加宽度到95% */
+            margin: 0 auto;
+            overflow-x: auto;
+        }
+        
+        /* 调整表格单元格宽度 */
+        #historyTable th,
+        #historyTable td {
+            padding: 4px 6px;  /* 减小内边距 */
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        
+        /* 固定列宽 */
+        #historyTable th:nth-child(1),  /* 日期 */
+        #historyTable td:nth-child(1) {
+            min-width: 80px;  /* 减小宽度 */
+        }
+        
+        #historyTable th:nth-child(2),  /* 代码 */
+        #historyTable td:nth-child(2) {
+            min-width: 80px;
+        }
+        
+        #historyTable th:nth-child(3),  /* 名称 */
+        #historyTable td:nth-child(3) {
+            min-width: 80px;
+        }
+        
+        #historyTable th:nth-child(4),  /* 板块 */
+        #historyTable td:nth-child(4) {
+            min-width: 50px;
+        }
+        
+        /* 数字列统一宽度 */
+        #historyTable th:nth-child(n+5),
+        #historyTable td:nth-child(n+5) {
+            min-width: 70px;  /* 减小数字列宽度 */
+            text-align: right;
+        }
+        
+        /* 收益率列稍窄一些 */
+        #historyTable th:nth-child(7),
+        #historyTable td:nth-child(7),
+        #historyTable th:nth-child(9),
+        #historyTable td:nth-child(9),
+        #historyTable th:nth-child(11),
+        #historyTable td:nth-child(11) {
+            min-width: 60px;  /* 收益率列再减小一点 */
+        }
+        
+        .history-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            width: 100%;
+            position: relative;
+        }
 
-    <link rel="canonical" href="http://devh0407.github.io/">
+        .history-data {
+            width: 100%; /* 使用全宽 */
+        }
+        
+        .calendar-section {
+            width: 300px;
+            margin-left: 20px;
+            flex-shrink: 0;
+        }
 
-    <!-- Bootstrap Core CSS -->
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
+        /* 历史数据标题布局 */
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%; /* 使用全宽 */
+        }
+        
+        .history-title {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .date-picker-section {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
 
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="/css/blog-style.css">
+        /* 表格样式 */
+        .history-table-container {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
 
-    <!-- Pygments Github CSS -->
-    <link rel="stylesheet" href="/css/syntax.css">
+        #historyTable {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;  /* 添加字体大小 */
+        }
+
+        #historyTable thead {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        #historyTable th {
+            padding: 12px 15px;
+            font-weight: 600;
+            color: #495057;
+            text-align: left;
+            white-space: nowrap;
+            font-size: 14px;  /* 添加表头字体大小 */
+        }
+
+        #historyTable td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+            white-space: nowrap;
+        }
+
+        #historyTable tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        #historyTable tbody tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        #historyTable tbody tr:hover {
+            background-color: #e9ecef;
+        }
+    </style>
 </head>
+<body>
 
-<style>
-
-    header.intro-header {
-        background-image: url('images/blog-bg.jpg')
-    }
-</style>
-<!-- hack iOS CSS :active style -->
-<body ontouchstart="" class="animated fadeIn">
-<!-- Navigation -->
-<nav class="navbar navbar-default navbar-custom navbar-fixed-top " id="nav-top" data-ispost = "false" data-istags="false
-" data-ishome = "true" >
-    <div class="container-fluid">
-        <!-- Brand and toggle get grouped for better mobile display -->
-        <div class="navbar-header page-scroll">
-            <button type="button" class="navbar-toggle">
-                <span class="sr-only">Toggle navigation</span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-                <span class="icon-bar"></span>
-            </button>
-            <a class="navbar-brand animated pulse" href="/">
-                <span class="brand-logo">
-                    DevH
-                </span>
-                's Blog
-            </a>
-        </div>
-
-        <!-- Collect the nav links, forms, and other content for toggling -->
-        <!-- Known Issue, found by Hux:
-            <nav>'s height woule be hold on by its content.
-            so, when navbar scale out, the <nav> will cover tags.
-            also mask any touch event of tags, unfortunately.
-        -->
-        <!-- /.navbar-collapse -->
-        <div id="huxblog_navbar">
-            <div class="navbar-collapse">
-                <ul class="nav navbar-nav navbar-right">
-                    <li>
-                        <a href="/">主页</a>
-                    </li>
-					
-                    
-                        
-							
-								
-							
-						
-                    
-					
-					
-						<li>
-							<a href="/about">关于</a>
-						</li>
-					
-                </ul>
-            </div>
-        </div>
+<div class="fixed-tab">
+    <div class="uk-container">
+        <ul class="uk-tab" uk-tab="connect: #content-tabs; animation: uk-animation-fade" id="main-tabs" role="tablist">
+            <li class="uk-active" role="presentation"><a href="#" aria-selected="true" role="tab" id="uk-tab-1" aria-controls="uk-tab-2">开盘数据</a></li>
+            <li role="presentation"><a href="#" aria-selected="false" tabindex="-1" role="tab" id="uk-tab-3" aria-controls="uk-tab-4">历史数据</a></li>
+        </ul>
     </div>
-    <!-- /.container -->
-</nav>
-<script>
-    // Drop Bootstarp low-performance Navbar
-    // Use customize navbar with high-quality material design animation
-    // in high-perf jank-free CSS3 implementation
-//    var $body   = document.body;
-    var $toggle = document.querySelector('.navbar-toggle');
-    var $navbar = document.querySelector('#huxblog_navbar');
-    var $collapse = document.querySelector('.navbar-collapse');
+</div>
 
-    $toggle.addEventListener('click', handleMagic)
-    function handleMagic(e){
-        if ($navbar.className.indexOf('in') > 0) {
-        // CLOSE
-            $navbar.className = " ";
-            // wait until animation end.
-            setTimeout(function(){
-                // prevent frequently toggle
-                if($navbar.className.indexOf('in') < 0) {
-                    $collapse.style.height = "0px"
-                }
-            },400)
-        }else{
-        // OPEN
-            $collapse.style.height = "auto"
-            $navbar.className += " in";
-        }
-    }
-</script>
+<div class="uk-container content-container">
+    <ul id="content-tabs" class="uk-switcher" role="presentation" style="touch-action: pan-y pinch-zoom;">
+        <!-- 开盘数据标签页 -->
+        <li class="uk-active" id="uk-tab-2" role="tabpanel" aria-labelledby="uk-tab-1">
+            <div id="realtime-blocks" class="uk-margin">
+                <h2>竞价强票（A模型） -- 仅作研究之用，买卖盈亏自负！
+                    <button class="uk-button uk-button-small uk-button-link" onclick="copyAllBlocksStocks()">
+                        <span uk-icon="copy" class="uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><rect width="12" height="16" fill="none" stroke="#000" x="3.5" y="2.5"></rect><polyline fill="none" stroke="#000" points="5 0.5 17.5 0.5 17.5 17"></polyline></svg></span> 复制全部
+                    </button>
+                </h2>
+                <div id="blocks-container">
+                        <div class="uk-card uk-card-default uk-margin">
+                            <div class="uk-card-header">
+                                <h3 class="uk-card-title">
+                                    <span uk-icon="bolt" class="uk-margin-small-right uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><path d="M4.74,20 L7.73,12 L3,12 L15.43,1 L12.32,9 L17.02,9 L4.74,20 L4.74,20 L4.74,20 Z M9.18,11 L7.1,16.39 L14.47,10 L10.86,10 L12.99,4.67 L5.61,11 L9.18,11 L9.18,11 L9.18,11 Z"></path></svg></span>
+                                    交集 (3只)
+                                    
+                                    <button class="uk-button uk-button-small uk-button-link" onclick="copyToClipboard('600880.SH,300296.SZ,002354.SZ')">
+                                        <span uk-icon="copy" class="uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><rect width="12" height="16" fill="none" stroke="#000" x="3.5" y="2.5"></rect><polyline fill="none" stroke="#000" points="5 0.5 17.5 0.5 17.5 17"></polyline></svg></span> 复制全部
+                                    </button>
+                                    
+                                </h3>
+                            </div>
+                            <div class="uk-card-body">
+                                
+                                <div class="uk-margin-top">
+                                    <div class="stock-table">
+                                        <table class="uk-table uk-table-small uk-table-divider">
+                                            <thead>
+                                                <tr>
+                                                    <th>代码</th>
+                                                    <th>名称</th>
+                                                    <th class="mobile-hide">今开</th>
+                                                    <th>开盘%</th>
+                                                    <th>现价</th>
+                                                    <th>涨幅%</th>
+                                                    <th>涨停价</th>
+                                                    <th>收益%</th>
+                                                    <th>状态</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="stock-table-hux">
+        <tr data-stock="600880.SH">
+            <td>600880</td>
+            <td>博瑞传播</td>
+            <td class="mobile-hide">6.28</td>
+            <td class="up-value">6.62%</td>
+            <td>6.48</td>
+            <td class="up-value">10.02%</td>
+            <td class="up-value">6.48</td>
+            <td class="up-value">3.18%</td>
+            <td class="up-value">涨停</td>
+        </tr>
+        <tr data-stock="300296.SZ">
+            <td>300296</td>
+            <td>利亚德</td>
+            <td class="mobile-hide">8.55</td>
+            <td class="up-value">6.08%</td>
+            <td>8.8</td>
+            <td class="up-value">9.18%</td>
+            <td class="up-value">9.67</td>
+            <td class="up-value">2.92%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="002354.SZ">
+            <td>002354</td>
+            <td>天娱数科</td>
+            <td class="mobile-hide">8.80</td>
+            <td class="up-value">3.53%</td>
+            <td>8.88</td>
+            <td class="up-value">4.47%</td>
+            <td class="up-value">9.35</td>
+            <td class="up-value">0.91%</td>
+            <td class=""></td>
+        </tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <div class="uk-card uk-card-default uk-margin">
+                            <div class="uk-card-header">
+                                <h3 class="uk-card-title">
+                                    <span uk-icon="star" class="uk-margin-small-right uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><polygon fill="none" stroke="#000" stroke-width="1.01" points="10 2 12.63 7.27 18.5 8.12 14.25 12.22 15.25 18 10 15.27 4.75 18 5.75 12.22 1.5 8.12 7.37 7.27"></polygon></svg></span>
+                                    文化传媒概念 (5只)
+                                    
+                                    <button class="uk-button uk-button-small uk-button-link" onclick="copyToClipboard('600880.SH,300296.SZ,002354.SZ,002175.SZ,300860.SZ')">
+                                        <span uk-icon="copy" class="uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><rect width="12" height="16" fill="none" stroke="#000" x="3.5" y="2.5"></rect><polyline fill="none" stroke="#000" points="5 0.5 17.5 0.5 17.5 17"></polyline></svg></span> 复制全部
+                                    </button>
+                                    
+                                </h3>
+                            </div>
+                            <div class="uk-card-body">
+                                
+                                <div class="uk-margin-top">
+                                    <div class="stock-table">
+                                        <table class="uk-table uk-table-small uk-table-divider">
+                                            <thead>
+                                                <tr>
+                                                    <th>代码</th>
+                                                    <th>名称</th>
+                                                    <th class="mobile-hide">今开</th>
+                                                    <th>开盘%</th>
+                                                    <th>现价</th>
+                                                    <th>涨幅%</th>
+                                                    <th>涨停价</th>
+                                                    <th>收益%</th>
+                                                    <th>状态</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="stock-table-hu0">
+        <tr data-stock="600880.SH">
+            <td>600880</td>
+            <td>博瑞传播</td>
+            <td class="mobile-hide">6.28</td>
+            <td class="up-value">6.62%</td>
+            <td>6.48</td>
+            <td class="up-value">10.02%</td>
+            <td class="up-value">6.48</td>
+            <td class="up-value">3.18%</td>
+            <td class="up-value">涨停</td>
+        </tr>
+        <tr data-stock="300296.SZ">
+            <td>300296</td>
+            <td>利亚德</td>
+            <td class="mobile-hide">8.55</td>
+            <td class="up-value">6.08%</td>
+            <td>8.8</td>
+            <td class="up-value">9.18%</td>
+            <td class="up-value">9.67</td>
+            <td class="up-value">2.92%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="002354.SZ">
+            <td>002354</td>
+            <td>天娱数科</td>
+            <td class="mobile-hide">8.80</td>
+            <td class="up-value">3.53%</td>
+            <td>8.88</td>
+            <td class="up-value">4.47%</td>
+            <td class="up-value">9.35</td>
+            <td class="up-value">0.91%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="002175.SZ">
+            <td>002175</td>
+            <td>东方智造</td>
+            <td class="mobile-hide">8.30</td>
+            <td class="up-value">3.49%</td>
+            <td>8.09</td>
+            <td class="up-value">0.87%</td>
+            <td class="up-value">8.82</td>
+            <td class="down-value">-2.53%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="300860.SZ">
+            <td>300860</td>
+            <td>锋尚文化</td>
+            <td class="mobile-hide">38.04</td>
+            <td class="up-value">5.02%</td>
+            <td>41.65</td>
+            <td class="up-value">14.99%</td>
+            <td class="up-value">43.46</td>
+            <td class="up-value">9.49%</td>
+            <td class=""></td>
+        </tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <div class="uk-card uk-card-default uk-margin">
+                            <div class="uk-card-header">
+                                <h3 class="uk-card-title">
+                                    <span uk-icon="heart" class="uk-margin-small-right uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><path fill="none" stroke="#000" stroke-width="1.03" d="M10,4 C10,4 8.1,2 5.74,2 C3.38,2 1,3.55 1,6.73 C1,8.84 2.67,10.44 2.67,10.44 L10,18 L17.33,10.44 C17.33,10.44 19,8.84 19,6.73 C19,3.55 16.62,2 14.26,2 C11.9,2 10,4 10,4 L10,4 Z"></path></svg></span>
+                                    人工智能 (5只)
+                                    
+                                    <button class="uk-button uk-button-small uk-button-link" onclick="copyToClipboard('300296.SZ,300192.SZ,002354.SZ,001389.SZ,603390.SH')">
+                                        <span uk-icon="copy" class="uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><rect width="12" height="16" fill="none" stroke="#000" x="3.5" y="2.5"></rect><polyline fill="none" stroke="#000" points="5 0.5 17.5 0.5 17.5 17"></polyline></svg></span> 复制全部
+                                    </button>
+                                    
+                                </h3>
+                            </div>
+                            <div class="uk-card-body">
+                                
+                                <div class="uk-margin-top">
+                                    <div class="stock-table">
+                                        <table class="uk-table uk-table-small uk-table-divider">
+                                            <thead>
+                                                <tr>
+                                                    <th>代码</th>
+                                                    <th>名称</th>
+                                                    <th class="mobile-hide">今开</th>
+                                                    <th>开盘%</th>
+                                                    <th>现价</th>
+                                                    <th>涨幅%</th>
+                                                    <th>涨停价</th>
+                                                    <th>收益%</th>
+                                                    <th>状态</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="stock-table-hu1">
+        <tr data-stock="300296.SZ">
+            <td>300296</td>
+            <td>利亚德</td>
+            <td class="mobile-hide">8.55</td>
+            <td class="up-value">6.08%</td>
+            <td>8.8</td>
+            <td class="up-value">9.18%</td>
+            <td class="up-value">9.67</td>
+            <td class="up-value">2.92%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="300192.SZ">
+            <td>300192</td>
+            <td>科德教育</td>
+            <td class="mobile-hide">17.00</td>
+            <td class="up-value">10.89%</td>
+            <td>18.4</td>
+            <td class="up-value">20.03%</td>
+            <td class="up-value">18.4</td>
+            <td class="up-value">8.24%</td>
+            <td class="up-value">涨停</td>
+        </tr>
+        <tr data-stock="002354.SZ">
+            <td>002354</td>
+            <td>天娱数科</td>
+            <td class="mobile-hide">8.80</td>
+            <td class="up-value">3.53%</td>
+            <td>8.88</td>
+            <td class="up-value">4.47%</td>
+            <td class="up-value">9.35</td>
+            <td class="up-value">0.91%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="001389.SZ">
+            <td>001389</td>
+            <td>广合科技</td>
+            <td class="mobile-hide">45.03</td>
+            <td class="up-value">6.68%</td>
+            <td>46.43</td>
+            <td class="up-value">10%</td>
+            <td class="up-value">46.43</td>
+            <td class="up-value">3.11%</td>
+            <td class="up-value">涨停</td>
+        </tr>
+        <tr data-stock="603390.SH">
+            <td>603390</td>
+            <td>通达电气</td>
+            <td class="mobile-hide">11.30</td>
+            <td class="up-value">3.67%</td>
+            <td>11.14</td>
+            <td class="up-value">2.2%</td>
+            <td class="up-value">11.99</td>
+            <td class="down-value">-1.42%</td>
+            <td class=""></td>
+        </tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    
+                        <div class="uk-card uk-card-default uk-margin">
+                            <div class="uk-card-header">
+                                <h3 class="uk-card-title">
+                                    <span uk-icon="happy" class="uk-margin-small-right uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><circle cx="13" cy="7" r="1"></circle><circle cx="7" cy="7" r="1"></circle><circle fill="none" stroke="#000" cx="10" cy="10" r="8.5"></circle><path fill="none" stroke="#000" d="M14.6,11.4 C13.9,13.3 12.1,14.5 10,14.5 C7.9,14.5 6.1,13.3 5.4,11.4"></path></svg></span>
+                                    AIGC概念 (5只)
+                                    
+                                    <button class="uk-button uk-button-small uk-button-link" onclick="copyToClipboard('600880.SH,300296.SZ,002354.SZ,603466.SH,300113.SZ')">
+                                        <span uk-icon="copy" class="uk-icon"><svg width="20" height="20" viewBox="0 0 20 20"><rect width="12" height="16" fill="none" stroke="#000" x="3.5" y="2.5"></rect><polyline fill="none" stroke="#000" points="5 0.5 17.5 0.5 17.5 17"></polyline></svg></span> 复制全部
+                                    </button>
+                                    
+                                </h3>
+                            </div>
+                            <div class="uk-card-body">
+                                
+                                <div class="uk-margin-top">
+                                    <div class="stock-table">
+                                        <table class="uk-table uk-table-small uk-table-divider">
+                                            <thead>
+                                                <tr>
+                                                    <th>代码</th>
+                                                    <th>名称</th>
+                                                    <th class="mobile-hide">今开</th>
+                                                    <th>开盘%</th>
+                                                    <th>现价</th>
+                                                    <th>涨幅%</th>
+                                                    <th>涨停价</th>
+                                                    <th>收益%</th>
+                                                    <th>状态</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="stock-table-hu2">
+        <tr data-stock="600880.SH">
+            <td>600880</td>
+            <td>博瑞传播</td>
+            <td class="mobile-hide">6.28</td>
+            <td class="up-value">6.62%</td>
+            <td>6.48</td>
+            <td class="up-value">10.02%</td>
+            <td class="up-value">6.48</td>
+            <td class="up-value">3.18%</td>
+            <td class="up-value">涨停</td>
+        </tr>
+        <tr data-stock="300296.SZ">
+            <td>300296</td>
+            <td>利亚德</td>
+            <td class="mobile-hide">8.55</td>
+            <td class="up-value">6.08%</td>
+            <td>8.8</td>
+            <td class="up-value">9.18%</td>
+            <td class="up-value">9.67</td>
+            <td class="up-value">2.92%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="002354.SZ">
+            <td>002354</td>
+            <td>天娱数科</td>
+            <td class="mobile-hide">8.80</td>
+            <td class="up-value">3.53%</td>
+            <td>8.88</td>
+            <td class="up-value">4.47%</td>
+            <td class="up-value">9.35</td>
+            <td class="up-value">0.91%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="603466.SH">
+            <td>603466</td>
+            <td>风语筑</td>
+            <td class="mobile-hide">12.15</td>
+            <td class="up-value">1.59%</td>
+            <td>12.68</td>
+            <td class="up-value">6.02%</td>
+            <td class="up-value">13.16</td>
+            <td class="up-value">4.36%</td>
+            <td class=""></td>
+        </tr>
+        <tr data-stock="300113.SZ">
+            <td>300113</td>
+            <td>顺网科技</td>
+            <td class="mobile-hide">17.02</td>
+            <td class="up-value">4.93%</td>
+            <td>17.46</td>
+            <td class="up-value">7.64%</td>
+            <td class="up-value">19.46</td>
+            <td class="up-value">2.59%</td>
+            <td class=""></td>
+        </tr></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                
+                            </div>
+                        </div>
+                    </div>
+            </div>
+        </li>
 
-<!-- Main Content -->
+        <!-- 历史数据标签页 -->
+        <li id="uk-tab-4" role="tabpanel" aria-labelledby="uk-tab-3">
+            <div id="history-data" class="uk-margin">
+                <div class="history-header">
+                    <h2 class="history-title">历史数据</h2>
+                    <div class="date-picker-section">
+                        <div class="uk-margin">
+                            <div class="uk-grid-small uk-grid uk-grid-stack" uk-grid="">
+                                <div>
+                                    <label class="uk-form-label">起始日期</label>
+                                    <div class="uk-form-controls">
+                                        <input type="date" id="start-date-picker" class="uk-input uk-form-width-medium">
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="uk-form-label">结束日期</label>
+                                    <div class="uk-form-controls">
+                                        <input type="date" id="end-date-picker" class="uk-input uk-form-width-medium">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+<!--                        <button class="uk-button uk-button-primary" onclick="loadHistoryByDate()">查看数据</button>-->
+                    </div>
+                </div>
 
+                <div class="history-container">
+                    <div class="history-data">
+                        <!-- 最近7日数据表格 -->
+                        <div class="history-table-container">
+                            <table id="historyTable">
+                                <thead>
+                                    <tr>
+                                        <th>日期</th>
+                                        <th>代码</th>
+                                        <th>名称</th>
+                                        <th>板块</th>
+                                        <th>开盘价</th>
+                                        <th>收盘价</th>
+                                        <th>收盘%</th>
+                                        <th>次开价</th>
+                                        <th>次开%</th>
+                                        <th>次收价</th>
+                                        <th>次收%</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="11" class="uk-text-center">请选择日期查看数据</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
 
-<style>
-
-    .custom-haojen-container .post-preview:nth-of-type(1),
-    .custom-haojen-container .post-preview-poetry:nth-of-type(1) {
-        text-align: center;
-        background-repeat: no-repeat;
-        border-radius: 3px;
-        background-size: cover;
-        padding: 0;
-        height: 300px;
-        display: table;
-        width: 100%;
-        background-color: rgba(0, 0, 0, 0.16);
-    }
-
-    /*去掉诗歌的背景图片*/
-    .custom-haojen-container .post-preview-poetry:nth-of-type(1) {
-        background-image: none !important;
-        background-color: rgba(255, 248, 220, 0.5);
-    }
-
-    .custom-haojen-container .post-preview:nth-child(1) h2,
-    .custom-haojen-container .post-preview:nth-child(1) .post-meta,
-    .custom-haojen-container .post-preview:nth-child(1) .post-subtitle {
-        text-shadow: 0 0 40px rgba(0, 0, 0, 1);
-        letter-spacing: 1px;
-        color: #fff;
-        margin-top: 0;
-        padding-left: 60px;
-        padding-right: 60px;
-    }
-
-    .custom-haojen-container .post-preview:nth-child(1) .post-meta {
-        font-size: .9em;
-        font-weight: 300;
-        margin-top: 0;
-    }
-
-    .custom-haojen-container .post-preview-poetry:nth-child(1) .post-subtitle {
-        letter-spacing: 6px;
-        font-size: 18px;
-        font-family: unset;
-        font-weight: 400;
-        color: rgba(0, 0, 0, .75)
-    }
-
-    /*不显示摘要*/
-    .custom-haojen-container .post-preview:nth-child(1) .post-content-preview {
-        display: none
-    }
-
-    /*只第一个显示背景图片*/
-    .custom-haojen-container .post-preview:not(:nth-child(1)) {
-        background-image: none !important;
-    }
-
-    /*第一个分界线去掉*/
-    .custom-haojen-container hr:nth-of-type(1) {
-        display: none;
-    }
-
-    /*主题*/
-    .custom-haojen-container .post-preview:nth-of-type(1) > a {
-        display: table-cell;
-        vertical-align: middle;
-    }
-
-    /*诗词标题*/
-    .custom-haojen-container .post-preview-poetry:nth-child(1) h2 {
-        font-size: 35px;
-        font-family: STKaiti;
-        color: rgba(0, 0, 0, .8);
-    }
-
-    .custom-haojen-container .post-preview-poetry:nth-of-type(1) .post-meta {
-        color: #0e2231;
-    }
-
-    @media (max-width: 768px) {
-        .custom-haojen-container .post-preview:nth-child(1) {
-            height: 240px;
-        }
-
-        .custom-haojen-container .post-preview-poetry:nth-child(1) h2 {
-            font-size: 28px !important;
-            margin-top: 0;
-        }
-
-        .custom-haojen-container .post-preview:nth-child(1) .post-subtitle {
-            font-size: 18px;
-            font-weight: 400;
-            padding-left: 0;
-            padding-right: 0;
-        }
-
-        .custom-haojen-container .post-preview:nth-of-type(1) > a {
-            padding: 20px
-        }
-    }
-
-    /*手机屏幕*/
-    @media (max-width: 400px) {
-        .custom-haojen-container .post-preview:nth-child(1) {
-            height: 195px;
-        }
-
-        .custom-haojen-container .post-preview-poetry:nth-child(1) h2 {
-            font-size: 20px !important;
-        }
-
-        .custom-haojen-container .post-preview:nth-child(1) .post-subtitle {
-            font-size: 16px;
-        }
-
-        .custom-haojen-container .post-preview:nth-child(1) a {
-            padding: 30px 20px;
-        }
-    }
-</style>
-
-<!-- Page Header -->
-<div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 visible-xs-block visible-sm-block">
-    <div class="row">
-        <header class="intro-header">
-            <div class="container">
-                <div class="site-heading text-center">
-                    <div class="about-me">
-                        <!--移动端头部显示-->
-                        <img src="images/avatar.jpeg"/>
-                        <h5><a href="/about/">DevH0407</a></h5>
-                        <p>一个傻鹅# 个人描述</p>
+                    <div class="calendar-section">
+                        <!-- 选择日期后显示的数据表格 -->
+                        <div id="selected-date-data" class="uk-margin-top uk-overflow-auto" style="display: none;">
+                            <h3 id="selected-date-title"></h3>
+                            <table class="uk-table uk-table-small uk-table-divider">
+                                <thead>
+                                    <tr>
+                                        <th>代码</th>
+                                        <th>名称</th>
+                                        <th>板块</th>
+                                        <th>开盘价格</th>
+                                        <th>开盘幅度</th>
+                                        <th>收盘价格</th>
+                                        <th>收盘幅度</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="selected-date-table-body"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-        </header>
-    </div>
-</div>
-<!-- Main Content -->
-<div class="container custom-haojen-container">
-    <!-- Post Container -->
-    <div class="row">
-        <div class="col-lg-8 col-lg-offset-1 col-md-8 col-md-offset-1 col-sm-12 col-xs-12 post-container">
-            <!-- Main Content -->
-
-
-
-<div class="post-preview "
-     style="background-image: url('images/blog-bg.jpg')">
-    <a href="/2017/11/18/kaochong-500/">
-        <h2 class="post-title">
-            考前冲刺点题500词
-        </h2>
-        <p class="post-meta">
-            <i class="fa fa-calendar" aria-hidden="true"></i> 2017-11-18
-        </p>
-        
-        <div class="post-content-preview">
-            <p>
-                考前冲刺点题500词stage1
-stage2
-stage3
-stage4
-stage5
-stage6
-stage7
-stage8
-stage9
-stage10
-
-            </p>
-        </div>
-    </a>
-
+        </li>
+    </ul>
 </div>
 
-<hr>
+<script>
+// 全局变量
+let blockDataMap = new Map();
 
+// 获取昨天的日期
+function getYesterdayDate() {
+    const now = new Date();
+    now.setDate(now.getDate() - 1);
+    return now.getFullYear() +
+           String(now.getMonth() + 1).padStart(2, '0') +
+           String(now.getDate()).padStart(2, '0');
+}
 
+// 获取当前日期
+function getCurrentDate() {
+    const now = new Date();
+    return now.getFullYear() +
+           String(now.getMonth() + 1).padStart(2, '0') +
+           String(now.getDate()).padStart(2, '0');
+}
 
-<div class="post-preview "
-     style="background-image: url('images/blog-bg.jpg')">
-    <a href="/2017/11/04/hello-world/">
-        <h2 class="post-title">
-            Hello World
-        </h2>
-        <p class="post-meta">
-            <i class="fa fa-calendar" aria-hidden="true"></i> 2017-11-04
-        </p>
-        
-        <div class="post-content-preview">
-            <p>
-                Welcome to Hexo! This is your very first post. Check documentation for more info. If you get any problems when using Hexo, you can find the answer i..
-            </p>
-        </div>
-    </a>
+// 获取指定日期的前一天
+function getPreviousDate(dateStr) {
+    const date = new Date(dateStr.substring(0, 4) + '-' + dateStr.substring(4, 6) + '-' + dateStr.substring(6, 8));
+    date.setDate(date.getDate() - 1);
+    return date.getFullYear() +
+           String(date.getMonth() + 1).padStart(2, '0') +
+           String(date.getDate()).padStart(2, '0');
+}
 
-</div>
+// 判断是否在交易时间内
+function isTradeTime() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 100 + minutes;  // 例如：9:25 = 925
 
-<hr>
+    // 9:25 到 15:01 之间是交易时间
+    return currentTime >= 925 && currentTime <= 1501;
+}
 
+// 检查是否应该继续自动刷新
+function shouldContinueRefresh() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 100 + minutes;
 
+    // 9:40 到 15:01 之间才自动刷新
+    return currentTime >= 940 && currentTime <= 1501;
+}
 
+// 检查是否在等待数据时间（9:25-9:40）
+function isWaitingForData() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 100 + minutes;
 
-<!-- 翻页 pager -->
+    return currentTime >= 925 && currentTime < 940;
+}
 
-<ul class="pager">
+// 检查是否在非交易时间（9:20-9:24）
+function isPreTradeTime() {
+    // return true;
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const currentTime = hours * 100 + minutes;
+
+    return currentTime >= 920 && currentTime < 925;
+}
+
+// 检查指定日期是否有数据
+async function checkDateHasData(date) {
+    try {
+        const response = await $.ajax({
+            url: `http://54.179.85.161:7379/GET/hu0_${date}`,
+            method: 'GET',
+            dataType: 'json',
+            timeout: 5000
+        });
+        return response && response.GET;
+    } catch (error) {
+        return false;
+    }
+}
+
+// 等待今天的数据（在9:25-9:40之间）
+async function waitForTodayData() {
+    const today = getCurrentDate();
+    let attempts = 0;
+    const maxAttempts = 90;  // 最多等待90次（15分钟，每10秒一次）
+
+    while (isWaitingForData() && attempts < maxAttempts) {
+        if (await checkDateHasData(today)) {
+            return today;
+        }
+        await new Promise(resolve => setTimeout(resolve, 10000));  // 等待10秒
+        attempts++;
+    }
+    return null;
+}
+
+// 查找最近的有数据的日期
+async function findLatestDataDate(startDate) {
+    let currentDate = startDate;
+    let maxAttempts = 7; // 最多往前查找7天
     
+    for (let i = 0; i < maxAttempts; i++) {
+        if (await checkDateHasData(currentDate)) {
+            return currentDate;
+        }
+        currentDate = getPreviousDate(currentDate);
+    }
+    return null;
+}
+
+// tab ：开盘数据  加载板块数据的函数
+async function loadBlocksData(isAutoRefresh = false) {
+    const blockContainer = $('#blocks-container');
     
-</ul>
-
-
-        </div>
-        <!-- Sidebar Container -->
-        <div class="
-                col-lg-3 col-lg-offset-0
-                col-md-3 col-md-offset-0
-                col-sm-12
-                col-xs-12
-                sidebar-container
-            ">
-
-            <!-- About Me -->
-            <section class="visible-md visible-lg" style="padding: 0 18px">
-                <div class="short-about">
-                    <!--侧边栏头像-->
-                    
-                    <img src="images/avatar.jpeg"/>
-                    
-                    <h5><a href="/about/">DevH0407</a></h5>
-                    
-                    <p>一个傻鹅# 个人描述</p>
-                    
-                    <hr>
-                    <!-- SNS Link 社交 -->
-                    <ul class="list-inline">
-                        
-                        
-                        
-                        <li>
-                            <a target="_blank" href="https://www.zhihu.com/people/huang-zhe-zhe-32">
-                                        <span class="fa-stack fa-lg">
-                                            <i class="fa fa-circle fa-stack-2x"></i>
-                                            <i class="fa  fa-stack-1x fa-inverse">知</i>
-                                        </span>
-                            </a>
-                        </li>
-                        
-
-                        
-                        <li>
-                            <a target="_blank" href="http://weibo.com/3833960492">
-                                        <span class="fa-stack fa-lg">
-                                            <i class="fa fa-circle fa-stack-2x"></i>
-                                            <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
-                                        </span>
-                            </a>
-                        </li>
-                        
-
-                        
-
-                        
-                        <li>
-                            <a target="_blank" href="https://github.com/devH0407">
-                                        <span class="fa-stack fa-lg">
-                                            <i class="fa fa-circle fa-stack-2x"></i>
-                                            <i class="fa fa-github fa-stack-1x fa-inverse"></i>
-                                        </span>
-                            </a>
-                        </li>
-                        
-
-                        
-                    </ul>
-                </div>
-            </section>
-
-            <!-- Featured Tags  标签 -->
-            
-            <section>
-                <div class="tags">
-                    
-                    
-                    
-                </div>
-            </section>
-            
-
-            
-
-        </div>
-    </div>
-</div>
-
-<!-- Footer -->
-<!-- Footer -->
-<footer>
-    <div class="container">
-        <div class="row">
-            <div class="col-lg-8 col-lg-offset-2 col-md-10 col-md-offset-1 text-center">
-                <br>
-                <ul class="list-inline text-center">
-                
-                
-                
-                    <li>
-                        <a target="_blank" href="https://www.zhihu.com/people/huang-zhe-zhe-32">
-                            <span class="fa-stack fa-lg">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa  fa-stack-1x fa-inverse">知</i>
-                            </span>
-                        </a>
-                    </li>
-                
-
-                
-                    <li>
-                        <a target="_blank" href="http://weibo.com/u/3833960492">
-                            <span class="fa-stack fa-lg">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-weibo fa-stack-1x fa-inverse"></i>
-                            </span>
-                        </a>
-                    </li>
-                
-
-                
-
-                
-                    <li>
-                        <a target="_blank"  href="https://github.com/devH0407">
-                            <span class="fa-stack fa-lg">
-                                <i class="fa fa-circle fa-stack-2x"></i>
-                                <i class="fa fa-github fa-stack-1x fa-inverse"></i>
-                            </span>
-                        </a>
-                    </li>
-                
-
-                
-
-                </ul>
-                <p class="copyright text-muted">
-                    Copyright &copy; DevH 2018
-                    <br>
-                    <span id="busuanzi_container_site_pv" style="font-size: 12px;">PV: <span id="busuanzi_value_site_pv"></span> Times</span>
-                    <br>
-                    
-                </p>
-
+    // 每次加载前清空容器
+    blockContainer.empty();
+    
+    // 如果不是自动刷新，显示加载动画
+    if (!isAutoRefresh) {
+        blockContainer.html(`
+            <div class="uk-text-center">
+                <div uk-spinner></div>
+                <p>加载中...</p>
             </div>
+        `);
+    }
+
+    // 检查是否在非交易时间（9:20-9:24）
+    if (isPreTradeTime()) {
+        showClock();
+        return;
+    }
+
+    let date;
+    const today = getCurrentDate();
+
+    // 如果在9:25-9:40之间，等待今天的数据
+    if (isWaitingForData()) {
+        date = await waitForTodayData();
+        if (!date) {
+            // 如果到9:40还没有数据，尝试获取历史数据
+            date = await findLatestDataDate(getPreviousDate(today));
+        }
+    } else {
+        // 其他时间，先尝试今天的数据，如果没有就往前找
+        date = await findLatestDataDate(today);
+    }
+
+    if (!date) {
+        blockContainer.html('<div class="uk-alert uk-alert-warning">未找到最近7天的数据</div>');
+        return;
+    }
+
+    let completedRequests = 0;
+    let hasAnyData = false;
+    blockDataMap.clear();  // 清除旧数据
+
+    // 先尝试获取当前日期的数据
+    blocks.forEach(block => {
+        makeRequest(
+            `http://54.179.85.161:7379/GET/${block}_${date}`,
+            {
+                errorMessage: `获取${block}板块数据失败`
+            }
+        ).done(function(response) {
+            completedRequests++;
+            
+            if (response && response.GET) {
+                hasAnyData = true;
+                const [blockName, stockList] = response.GET.split(':');
+                const stocks = stockList ? stockList.split(',').filter(Boolean) : [];
+
+
+                // 存储板块数据
+                blockDataMap.set(block, {
+                    blockName,
+                    stocks,
+                    html: `
+                        <div class="uk-card uk-card-default uk-margin">
+                            <div class="uk-card-header">
+                                <h3 class="uk-card-title">
+                                    <span uk-icon="${blockIcons[block]}" class="uk-margin-small-right"></span>
+                                    ${blockName} (${stocks.length}只)
+                                    ${stocks.length > 0 ? `
+                                    <button class="uk-button uk-button-small uk-button-link" 
+                                            onclick="copyToClipboard('${stocks.join(',')}')">
+                                        <span uk-icon="copy"></span> 复制全部
+                                    </button>
+                                    ` : ''}
+                                </h3>
+                            </div>
+                            <div class="uk-card-body">
+                                ${stocks.length > 0 ? `
+                                <div class="uk-margin-top">
+                                    <div class="stock-table">
+                                        <table class="uk-table uk-table-small uk-table-divider">
+                                            <thead>
+                                                <tr>
+                                                    <th>代码</th>
+                                                    <th>名称</th>
+                                                    <th class="mobile-hide">今开</th>
+                                                    <th>开盘%</th>
+                                                    <th>现价</th>
+                                                    <th>涨幅%</th>
+                                                    <th>涨停价</th>
+                                                    <th>收益%</th>
+                                                    <th>状态</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="stock-table-${block}">
+                                                <tr id="loading-${block}">
+                                                    <td colspan="8" class="uk-text-center">
+                                                        <div uk-spinner></div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                ` : '<div class="uk-text-muted">暂无股票</div>'}
+                            </div>
+                        </div>
+                    `
+                });
+            }
+            
+            // 所有板块数据都加载完成
+            if (completedRequests === blocks.length) {
+                // 清空容器
+                blockContainer.empty();
+                
+                // 按顺序显示板块（hux放在最后）
+                blocks.forEach(blockKey => {
+                    const blockData = blockDataMap.get(blockKey);
+                    if (blockData) {
+                        blockContainer.append(blockData.html);
+                        
+                        // 加载股票详情
+                        let loadedStocks = 0;
+                        const totalStocks = blockData.stocks.length;
+                        const tableBody = $(`#stock-table-${blockKey}`);
+                        const rows = [];
+
+                        blockData.stocks.forEach((stock, index) => {
+                            const marketCode = stock.startsWith('6') || stock.startsWith('5') 
+                                ? '1.' + stock.split('.')[0] 
+                                : '0.' + stock.split('.')[0];
+                                
+                            // 预先为每个股票创建一个占位行，保持顺序
+                            rows[index] = {
+                                code: stock,
+                                html: `<tr><td colspan="8" class="uk-text-center"><div uk-spinner></div></td></tr>`
+                            };
+                        });
+
+                        // 直接获取实时数据
+                        blockData.stocks.forEach((stock, index) => {
+                            const marketCode = stock.startsWith('6') || stock.startsWith('5') 
+                                ? '1.' + stock.split('.')[0] 
+                                : '0.' + stock.split('.')[0];
+
+                            fetch(`https://push2.eastmoney.com/api/qt/stock/get?&fltt=2&invt=2&fields=f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f57,f58,f60,f170&secid=${marketCode}&_=${Date.now()}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                loadedStocks++;
+                                
+                                if (data && data.data) {
+                                    updateStockRow(data.data, stock, index, rows, blockKey);
+                                }
+
+                                if (loadedStocks === totalStocks) {
+                                    // 移除loading行
+                                    $(`#loading-${blockKey}`).remove();
+                                    // 按原始顺序添加所有行
+                                    const tableBody = $(`#stock-table-${blockKey}`);
+                                    tableBody.empty();  // 清空现有的行
+                                    rows.forEach(row => tableBody.append(row.html));
+                                    
+                                    // 设置定时更新（仅在交易时间内）
+                                    startStockUpdateTimer(blockData.stocks, blockKey);
+                                }
+                            })
+                            .catch(error => {
+                                console.error(`获取股票数据失败: ${stock}`, error);
+                            });
+                        });
+                    }
+                });
+                
+                if (!hasAnyData) {
+                    showClock();
+                }
+            }
+        });
+    });
+}
+
+// 复制到剪贴板
+async function copyToClipboard(text) {
+    try {
+        // 创建临时文本区域
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+
+        // 确保文本区域在视图之外
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '0';
+        
+        document.body.appendChild(textArea);
+        textArea.select();
+        
+        try {
+            // 尝试使用新的 API
+            await navigator.clipboard.writeText(text);
+        } catch (err) {
+            // 如果新API失败，使用传统方法
+            document.execCommand('copy');
+        }
+        
+        document.body.removeChild(textArea);
+        
+        // 显示成功提示
+        UIkit.notification({
+            message: '已复制到剪贴板',
+            status: 'success',
+            pos: 'top-center',
+            timeout: 2000
+        });
+    } catch (err) {
+        console.error('复制失败:', err);
+        UIkit.notification({
+            message: '复制失败',
+            status: 'danger',
+            pos: 'top-center',
+            timeout: 2000
+        });
+    }
+}
+
+// 格式化日期函数
+function formatDate(date, format = 'YYYY-MM-DD') {
+    if (typeof date === 'string') {
+        // 如果输入是 YYYYMMDD 格式的字符串
+        if (date.length === 8) {
+            const year = date.substring(0, 4);
+            const month = date.substring(4, 6);
+            const day = date.substring(6, 8);
+            return `${year}-${month}-${day}`;
+        }
+        date = new Date(date);
+    }
+    
+    if (!(date instanceof Date) || isNaN(date)) {
+        return '-';
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    if (format === 'YYYYMMDD') {
+        return `${year}${month}${day}`;
+    }
+    return `${year}-${month}-${day}`;
+}
+
+// 获取历史数据
+async function fetchHistoryData(dateStr) {
+    try {
+        const response = await fetch(`/api/history/${dateStr}`);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('获取历史数据失败:', error);
+        return null;
+    }
+}
+
+// TODO 历史数据1
+async function loadHistoryData() {
+    const tbody = document.getElementById('historyTable').querySelector('tbody');
+    tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center"><div uk-spinner></div><div class="uk-margin-small">正在加载数据，请稍候...</div></td></tr>';
+    console.log("ready loadHistoryData")
+    try {
+        // 获取最近7天的数据
+        const dates = [];
+        const currentDate = new Date();
+        
+        // 生成日期列表
+        for (let i = 0; i < 7; i++) {
+            const date = new Date(currentDate);
+            date.setDate(date.getDate() - i);
+            dates.push(date.toISOString().slice(0, 10).replace(/-/g, ''));
+        }
+        console.log(dates)
+        // 并行获取所有日期的数据
+        const dataPromises = dates.map(date => 
+            fetch(`/api/history_data?date=${date}`).then(response => response.json())
+        );
+        console.log(dataPromises)
+        const allDataArrays = await Promise.all(dataPromises);
+        const allData = allDataArrays.flat().filter(Boolean);
+        
+        if (allData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center">暂无数据</td></tr>';
+            return;
+        }
+        
+        // 按日期和板块排序
+        allData.sort((a, b) => {
+            if (a.date !== b.date) return b.date.localeCompare(a.date);
+            return a.block.localeCompare(b.block);
+        });
+
+        // 定义列配置
+        const columns = [
+            { key: 'date', label: '日期' },
+            { key: 'code', label: '代码' },
+            { key: 'name', label: '名称' },
+            { key: 'block', label: '板块' },
+            { key: 'open', label: '开盘价', format: v => v?.toFixed(2) || '-' },
+            { key: 'close', label: '收盘价', format: v => v?.toFixed(2) || '-' },
+            { key: 'close_return', label: '收盘%', format: v => v ? `${v}%` : '-', isChange: true },
+            { key: 'next_open', label: '次开价', format: v => v?.toFixed(2) || '-' },
+            { key: 'next_open_return', label: '次开%', format: v => v ? `${v}%` : '-', isChange: true },
+            { key: 'next_close', label: '次收价', format: v => v?.toFixed(2) || '-' },
+            { key: 'next_close_return', label: '次收%', format: v => v ? `${v}%` : '-', isChange: true }
+        ];
+        
+        // 清空表格
+        tbody.innerHTML = '';
+        
+        // 填充数据
+        for (const row of allData) {
+            const tr = document.createElement('tr');
+            
+            // 获取股票名称
+            const stockName = await getStockName(row.code);
+            row.name = stockName;  // 更新名称
+            
+            for (const col of columns) {
+                const td = document.createElement('td');
+                const value = row[col.key];
+                td.textContent = col.format ? col.format(value) : (value || '-');
+                if (col.isChange && value) {
+                    td.className = value >= 0 ? 'up-value' : 'down-value';
+                }
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+        
+    } catch (error) {
+        console.error('加载历史数据失败:', error);
+        tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center uk-text-danger">加载数据失败，请稍后重试</td></tr>';
+    }
+}
+
+// 获取股票名称并更新到表格
+async function updateStockName(code, nameCell) {
+    try {
+        const marketCode = code.startsWith('6') || code.startsWith('5') ? '1' : '0';
+        const pureCode = code.split('.')[0];
+        const secid = `${marketCode}.${pureCode}`;
+        
+        const url = `https://push2.eastmoney.com/api/qt/stock/get?&fltt=2&invt=2&fields=f58&secid=${secid}&_=${Date.now()}`;
+        console.log('获取股票名称:', url);
+
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log('股票数据:', data);
+        // console.log("ready")
+        // console.log(data)
+        if (data && data.data && data.data.f58) {
+            nameCell.textContent = data.data.f58;
+            console.log(`股票${code}名称:`, data.data.f58);
+        }
+    } catch (error) {
+        console.error('获取股票名称失败:', error);
+    }
+}
+
+// TODO 加载历史数据2
+async function loadHistoryData() {
+    const tbody = document.getElementById('historyTable').querySelector('tbody');
+    tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center"><div uk-spinner></div><div class="uk-margin-small">正在加载数据，请稍候...</div></td></tr>';
+    
+    try {
+        // 获取最近2天的数据
+        const today = new Date();
+        const dates = [];
+        for (let i = 0; i < 2; i++) {
+            const date = new Date(today);
+            date.setDate(today.getDate() - i);
+            dates.push(date.toISOString().slice(0, 10).replace(/-/g, ''));
+        }
+        
+        // 并行获取所有日期的数据
+        const allDataPromises = dates.map(date => 
+            fetch(`/api/history_data?date=${date}`).then(response => response.json())
+        );
+        
+        const allDataArrays = await Promise.all(allDataPromises);
+        const allData = allDataArrays.flat().filter(Boolean);
+        
+        if (allData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center">暂无数据</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        
+        // 填充数据并异步获取股票名称
+        for (const row of allData) {
+            const tr = document.createElement('tr');
+            const cells = {};  // 存储单元格引用
+            
+            // 创建并填充单元格
+            [
+                { key: 'date', value: row.date },
+                { key: 'code', value: row.code },
+                { key: 'name', value: '-' },
+                { key: 'block', value: row.block },
+                { key: 'open', value: row.open?.toFixed(2) || '-' },
+                { key: 'close', value: row.close?.toFixed(2) || '-' },
+                { key: 'close_return', value: row.close_return ? `${row.close_return}%` : '-', isChange: true },
+                { key: 'next_open', value: row.next_open?.toFixed(2) || '-' },
+                { key: 'next_open_return', value: row.next_open_return ? `${row.next_open_return}%` : '-', isChange: true },
+                { key: 'next_close', value: row.next_close?.toFixed(2) || '-' },
+                { key: 'next_close_return', value: row.next_close_return ? `${row.next_close_return}%` : '-', isChange: true }
+            ].forEach(({ key, value, isChange }) => {
+                const td = document.createElement('td');
+                td.textContent = value;
+                if (isChange && value !== '-') {
+                    const numValue = parseFloat(value);
+                    td.className = numValue >= 0 ? 'up-value' : 'down-value';
+                }
+                tr.appendChild(td);
+                cells[key] = td;  // 保存单元格引用
+            });
+            
+            tbody.appendChild(tr);
+            
+            // 异步获取并更新股票名称
+            updateStockName(row.code, cells.name);
+        }
+        
+    } catch (error) {
+        console.error('加载历史数据失败:', error);
+        tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center uk-text-danger">加载数据失败，请稍后重试</td></tr>';
+    }
+}
+
+// 查看指定日期的数据
+async function loadHistoryByDate() {
+    const startDateInput = document.getElementById('start-date-picker');
+    const endDateInput = document.getElementById('end-date-picker');
+    const startDate = startDateInput.value ? startDateInput.value.replace(/-/g, '') : '';
+    const endDate = endDateInput.value ? endDateInput.value.replace(/-/g, '') : '';
+    
+    const tbody = document.getElementById('historyTable').querySelector('tbody');
+    tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center"><div uk-spinner></div><div class="uk-margin-small">正在加载数据，朋友请稍候...</div></td></tr>';
+    //console.log('正在加载数据，朋友请稍候...' );
+    try {
+        const response = await fetch(`/api/history_data?start_date=${startDate}&end_date=${endDate}&blocks=["hux", "hu0", "hu1", "hu2"]`);
+        console.log('历史数据响应:', response.status);
+        
+        const result = await response.json();
+        console.log('历史数据:', result);
+        
+        if (!result.data || result.data.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center">暂无数据</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = '';
+        
+        // 填充数据并异步获取股票名称
+        for (const row of result.data) {
+            const tr = document.createElement('tr');
+            const cells = {};  // 存储单元格引用
+            
+            // 创建并填充单元格
+            [
+                { key: 'date', value: row.date },
+                { key: 'code', value: row.code },
+                { key: 'name', value: '-' },  // 先显示占位符
+                { key: 'block', value: row.block },
+                { key: 'open', value: row.open?.toFixed(2) || '-' },
+                { key: 'close', value: row.close?.toFixed(2) || '-' },
+                { key: 'close_return', value: row.close_return ? `${row.close_return}%` : '-', isChange: true },
+                { key: 'next_open', value: row.next_open?.toFixed(2) || '-' },
+                { key: 'next_open_return', value: row.next_open_return ? `${row.next_open_return}%` : '-', isChange: true },
+                { key: 'next_close', value: row.next_close?.toFixed(2) || '-' },
+                { key: 'next_close_return', value: row.next_close_return ? `${row.next_close_return}%` : '-', isChange: true }
+            ].forEach(({ key, value, isChange }) => {
+                const td = document.createElement('td');
+                td.textContent = value;
+                if (isChange && value !== '-') {
+                    const numValue = parseFloat(value);
+                    td.className = numValue >= 0 ? 'up-value' : 'down-value';
+                }
+                tr.appendChild(td);
+                cells[key] = td;  // 保存单元格引用
+            });
+            
+            tbody.appendChild(tr);
+            
+            // 异步获取并更新股票信息
+            (async () => {
+                try {
+                    const marketCode = row.code.startsWith('6') || row.code.startsWith('5') ? '1' : '0';
+                    const pureCode = row.code.split('.')[0];
+                    const secid = `${marketCode}.${pureCode}`;
+                    
+                    const url = `https://push2.eastmoney.com/api/qt/stock/get?&fltt=2&invt=2&fields=f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f57,f58,f60,f170&secid=${secid}&_=${Date.now()}`;
+                    console.log('获取股票信息:', url);
+                    
+                    const stockResponse = await fetch(url);
+                    const stockData = await stockResponse.json();
+                    console.log('股票数据:', stockData);
+                    
+                    if (stockData && stockData.data) {
+                        const data = stockData.data;
+                        cells.name.textContent = data.f58;  // 股票名称
+                        console.log(`股票${row.code}名称:`, data.f58);
+                    }
+                } catch (error) {
+                    console.error('获取股票信息失败:', error);
+                }
+            })();
+        }
+    } catch (error) {
+        console.error('加载历史数据失败:', error);
+        tbody.innerHTML = '<tr><td colspan="11" class="uk-text-center uk-text-danger">加载数据失败，请稍后重试</td></tr>';
+    }
+}
+
+// 获取股票价格数据
+function getStockPrice(code, date, type) {
+    return makeRequest(`/api/stock/get_data_infos?code=${code}`);
+}
+
+// 获取股票名称
+async function getStockName(code) {
+    try {
+        // 构建市场代码
+        const marketCode = code.startsWith('6') || code.startsWith('5') ? '1' : '0';
+        const pureCode = code.split('.')[0];
+        const secid = `${marketCode}.${pureCode}`;
+        
+        const url = `https://push2.eastmoney.com/api/qt/stock/get?&fltt=2&invt=2&fields=f58&secid=${secid}&_=${Date.now()}`;
+        console.log('获取股票名称:', url);
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        console.log('股票数据:', data);
+        
+        if (data && data.data && data.data.f58) {
+            return data.data.f58;
+        }
+        return '-';
+    } catch (error) {
+        console.error('获取股票名称失败:', error);
+        return '-';
+    }
+}
+
+// 计算涨跌幅
+function calculateChange(current, previous) {
+    if (!current || !previous || previous === 0) return '-';
+    const change = ((current - previous) / previous * 100).toFixed(2);
+    return `${change}%`;
+}
+
+// 显示非交易时间的时钟
+function showClock() {
+    const blockContainer = $('#blocks-container');
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('zh-CN', { 
+        hour12: false,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    });
+    
+    blockContainer.html(`
+        <div class="uk-card uk-card-default uk-margin uk-card-body uk-text-center" style="background-color: #f0f7ff;">
+            <h3><span uk-icon="icon: clock; ratio: 1.2" class="uk-margin-small-right"></span>非交易时间</h3>
+            <div class="uk-text-large" id="clock-display">${timeString}</div>
+            <p class="uk-text-muted">交易时间：9:25 - 15:00</p>
         </div>
-    </div>
-</footer>
+    `);
 
-<!-- jQuery -->
-<script src="/js/jquery.min.js"></script>
+    // 每秒更新时钟显示
+    setInterval(() => {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString('zh-CN', { 
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        $('#clock-display').text(timeString);
+    }, 1000);
+}
 
-<!-- Bootstrap Core JavaScript -->
-<script src="/js/bootstrap.min.js"></script>
+// 统一的AJAX错误处理
+function handleAjaxError(error, message) {
+    console.error(message, error);
+    UIkit.notification({
+        message: message,
+        status: 'danger',
+        pos: 'top-right',
+        timeout: 3000
+    });
+}
 
-<!-- Custom Theme JavaScript -->
-<script src="/js/blog.js"></script>
+// 统一的AJAX请求函数
+function makeRequest(url, options = {}) {
+    return $.ajax({
+        url: url,
+        method: options.method || 'GET',
+        data: options.data,
+        dataType: options.dataType || 'json',
+        timeout: options.timeout || 10000,
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        handleAjaxError(errorThrown, options.errorMessage || '请求失败');
+    });
+}
 
-<!-- async load function -->
-<script>
-    function async(u, c) {
-      var d = document, t = 'script',
-          o = d.createElement(t),
-          s = d.getElementsByTagName(t)[0];
-      o.src = u;
-      if (c) { o.addEventListener('load', function (e) { c(null, e); }, false); }
-      s.parentNode.insertBefore(o, s);
+// 板块图标映射
+const blockIcons = {"hu0": "star", "hu1": "heart", "hu2": "happy", "hux": "bolt"};
+
+// 板块列表
+const blocks = ["hux", "hu0", "hu1", "hu2"];
+    
+// 修改自动刷新函数
+function startAutoRefresh() {
+    if (window.dataRefreshTimer) {
+        clearInterval(window.dataRefreshTimer);
+        window.dataRefreshTimer = null;
     }
-</script>
-
-<!-- jquery.tagcloud.js -->
-<script>
-    // only load tagcloud.js in tag.html
-    if($('#tag_cloud').length !== 0){
-        async("http://devh0407.github.io/js/jquery.tagcloud.js",function(){
-            $.fn.tagcloud.defaults = {
-                //size: {start: 1, end: 1, unit: 'em'},
-                color: {start: '#bbbbee', end: '#0085a1'},
-            };
-            $('#tag_cloud a').tagcloud();
-        })
+    
+    // 只在开盘数据标签页激活时启动定时器
+    if (!$('#main-tabs li').first().hasClass('uk-active')) {
+        return;
     }
+    
+    window.dataRefreshTimer = setInterval(() => {
+        if ($('#main-tabs li').first().hasClass('uk-active')) {
+            loadBlocksData(true);
+        } else {
+            clearInterval(window.dataRefreshTimer);
+            window.dataRefreshTimer = null;
+        }
+    }, 60000);
+}
+
+// 修改股票更新定时器函数
+function startStockUpdateTimer(stocks, blockKey) {
+    // 确保清理已存在的定时器
+    if (window.stockUpdateTimers && window.stockUpdateTimers[blockKey]) {
+        clearInterval(window.stockUpdateTimers[blockKey]);
+        delete window.stockUpdateTimers[blockKey];
+    }
+
+    // 只在开盘数据标签页激活时启动定时器
+    if (!$('#main-tabs li').first().hasClass('uk-active')) {
+        return;
+    }
+
+    window.stockUpdateTimers[blockKey] = setInterval(() => {
+        // 再次检查是否在开盘数据标签页
+        if (!$('#main-tabs li').first().hasClass('uk-active')) {
+            clearInterval(window.stockUpdateTimers[blockKey]);
+            delete window.stockUpdateTimers[blockKey];
+            return;
+        }
+
+        stocks.forEach((stock, index) => {
+            const marketCode = stock.startsWith('6') || stock.startsWith('5') 
+                ? '1.' + stock.split('.')[0] 
+                : '0.' + stock.split('.')[0];
+
+            fetch(`https://push2.eastmoney.com/api/qt/stock/get?&fltt=2&invt=2&fields=f43,f44,f45,f46,f47,f48,f49,f50,f51,f52,f57,f58,f60,f170&secid=${marketCode}&_=${Date.now()}`)
+            .then(response => response.json())
+            .then(data => {
+                // 再次检查是否还在开盘数据标签页
+                if (!$('#main-tabs li').first().hasClass('uk-active')) {
+                    return;
+                }
+                if (data && data.data) {
+                    updateStockRow(data.data, stock, null, null, blockKey);
+                }
+            })
+            .catch(error => {
+                console.error(`更新股票数据失败: ${stock}`, error);
+            });
+        });
+    }, 10000);  
+}
+
+// 页面关闭时清除所有定时器
+$(window).on('unload', function() {
+    if (window.stockUpdateTimers) {
+        Object.values(window.stockUpdateTimers).forEach(timer => {
+            clearInterval(timer);
+        });
+        window.stockUpdateTimers = {};
+    }
+    if (window.dataRefreshTimer) {
+        clearInterval(window.dataRefreshTimer);
+        window.dataRefreshTimer = null;
+    }
+});
+
+// 在页面加载时自动加载最近1天数据
+document.addEventListener('DOMContentLoaded', () => {
+    // 设置结束日期为今天
+    const today = new Date();
+    const endDateInput = document.getElementById('end-date-picker');
+    endDateInput.value = today.toISOString().slice(0, 10);
+    
+    // 设置起始日期为1天前
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 1);
+    const startDateInput = document.getElementById('start-date-picker');
+    startDateInput.value = startDate.toISOString().slice(0, 10);
+    
+    // 加载数据
+    //停用
+    // loadHistoryByDate();
+});
+
+// 更新单个股票行数据
+function updateStockRow(data, stock, index, rows, blockKey) {
+    const currentPrice = data.f43 || '';  // 现价
+    const openPrice = data.f46 || '';     // 今开
+    const upLimitPrice = data.f51 || '';  // 涨停价
+    const downLimitPrice = data.f52 || '';  // 跌停价
+    const preClose = data.f60 || 0;      // 昨收价
+    const changePercent = data.f170 || 0; // 涨跌幅
+    
+    const openChange = ((openPrice - preClose) / preClose * 100).toFixed(2);
+    const openChangeClass = parseFloat(openChange) >= 0 ? 'up-value' : 'down-value';
+    
+    const changeClass = changePercent >= 0 ? 'up-value' : 'down-value';
+    
+    let profit = '--';
+    let profitClass = '';
+    if (currentPrice && openPrice) {
+        const profitValue = ((currentPrice - openPrice) / openPrice * 100);
+        profit = profitValue.toFixed(2);
+        profitClass = profitValue >= 0 ? 'up-value' : 'down-value';
+    }
+    
+    let status = '';
+    let statusClass = '';
+    if (currentPrice === upLimitPrice) {
+        status = '涨停';
+        statusClass = 'up-value';
+    } else if (currentPrice === downLimitPrice) {
+        status = '跌停';
+        statusClass = 'down-value';
+    }
+
+    //console.log("ready")
+
+    const newRow = `
+        <tr data-stock="${stock}">
+            <td>${data.f57}</td>
+            <td>${data.f58}</td>
+            <td class="mobile-hide">${openPrice.toFixed(2)}</td>
+            <td class="${openChangeClass}">${openChange}%</td>
+            <td>${currentPrice}</td>
+            <td class="${changeClass}">${changePercent}%</td>
+            <td class="up-value">${upLimitPrice}</td>
+            <td class="${profitClass}">${profit}%</td>
+            <td class="${statusClass}">${status}</td>
+        </tr>`;
+    
+    if (rows) {
+        rows[index] = {
+            code: stock,
+            html: newRow
+        };
+        return;  // 如果是初始加载，只更新 rows 数组，不直接更新 DOM
+    }
+    
+    // 只有在实时更新时才直接更新 DOM
+    const tableBody = $(`#stock-table-${blockKey}`);
+    const existingRow = tableBody.find(`tr[data-stock="${stock}"]`);
+    if (existingRow.length) {
+        existingRow.replaceWith(newRow);
+    }
+}
+
+// 修改股票更新定时器函数
+function startStockUpdateTimer(stocks, blockKey) {
+    if (!stocks || !stocks.length) return;
+    
+    // 清除已有的定时器
+    if (window.stockUpdateTimers[blockKey]) {
+        clearInterval(window.stockUpdateTimers[blockKey]);
+    }
+    
+    // 创建新的定时器
+    window.stockUpdateTimers[blockKey] = setInterval(() => {
+        if (!shouldContinueRefresh()) {
+            clearInterval(window.stockUpdateTimers[blockKey]);
+            return;
+        }
+        
+        stocks.forEach(stock => {
+            fetch(`https://push2.eastmoney.com/api/qt/stock/get?ut=fa5fd1943c7b386f172d6893dbfba10b&invt=2&fltt=2&fields=f43,f57,f58,f169,f170,f46,f44,f51,f52,f168,f50,f60&secid=${stock}`)
+            .then(response => response.json())
+            .then(data => {
+                if (!data || !data.data) {
+                    console.error(`获取股票数据失败: ${stock}`);
+                    return;
+                }
+                if (data && data.data) {
+                    // 直接使用 updateStockRow 更新数据
+                    updateStockRow(data.data, stock, null, null, blockKey);
+                }
+            })
+            .catch(error => {
+                console.error(`更新股票数据失败: ${stock}`, error);
+            });
+        });
+    }, 60000);
+}
+
+// 复制所有板块股票的函数
+function copyAllBlocksStocks() {
+    const allStocks = new Set();
+    blocks.forEach(blockKey => {
+        const blockData = blockDataMap.get(blockKey);
+        if (blockData && blockData.stocks) {
+            blockData.stocks.forEach(stock => allStocks.add(stock));
+        }
+    });
+    
+    const uniqueStocks = Array.from(allStocks).sort();
+    
+    copyToClipboard(uniqueStocks.join(','));
+}
+
+// 判断是否在交易时间内
+function isTradeTime() {
+    const now = new Date();
+    const hour = now.getHours();
+    const minute = now.getMinutes();
+    const time = hour * 100 + minute;  // 例如：9:30 = 930
+
+    return time >= 925 && time <= 1501;
+}
+
+// 修改页面加载函数
+$(document).ready(function() {
+    window.dataRefreshTimer = null;
+    window.stockUpdateTimers = {};
+
+    function clearAllTimers() {
+        if (window.stockUpdateTimers) {
+            Object.values(window.stockUpdateTimers).forEach(timer => {
+                clearInterval(timer);
+            });
+            window.stockUpdateTimers = {};
+        }
+        if (window.dataRefreshTimer) {
+            clearInterval(window.dataRefreshTimer);
+            window.dataRefreshTimer = null;
+        }
+    }
+
+    // 在切换标签页之前清理所有定时器
+    UIkit.util.on('#main-tabs', 'beforeshow', function(e) {
+        clearAllTimers();
+    });
+
+    // 在切换到开盘数据标签页时重新启动定时器
+    UIkit.util.on('#main-tabs', 'shown', function(e) {
+        const isOpeningDataTab = $(e.target).is(':first-child');
+        if (isOpeningDataTab) {
+            loadBlocksData(false);
+        }
+    });
+
+    // 初始加载
+    loadBlocksData();
+    if (shouldContinueRefresh()) {
+        startAutoRefresh();
+    }
+});
 </script>
 
-<!--fastClick.js -->
-<script>
-    async("//cdn.bootcss.com/fastclick/1.0.6/fastclick.min.js", function(){
-        var $nav = document.querySelector("nav");
-        if($nav) FastClick.attach($nav);
-    })
-</script>
 
-<!-- Google Analytics -->
-
-
-
-<!-- Baidu Tongji -->
-
-
-<!-- swiftype -->
-<script type="text/javascript">
-  (function(w,d,t,u,n,s,e){w['SwiftypeObject']=n;w[n]=w[n]||function(){
-  (w[n].q=w[n].q||[]).push(arguments);};s=d.createElement(t);
-  e=d.getElementsByTagName(t)[0];s.async=1;s.src=u;e.parentNode.insertBefore(s,e);
-  })(window,document,'script','//s.swiftypecdn.com/install/v2/st.js','_st');
-
-  _st('install','','2.0.0');
-</script>
-
-<script async src="//dn-lbstatics.qbox.me/busuanzi/2.3/busuanzi.pure.mini.js"></script>
-
-<!--wechat title img-->
-<img class="wechat-title-img" src="images/avatar.jpeg">
-</body>
-
-</html>
+</body></html>
